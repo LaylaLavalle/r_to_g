@@ -1,0 +1,92 @@
+r_to_g <- function (r, var.r = NULL, n, level = 95, cer = 0.2, dig = 2, id = NULL, data = NULL) 
+{
+    if (!is.null(data)) {
+        mf <- match.call()
+        args <- match(c("r", "var.r", "n", "level", "dig", "id", 
+            "data"), names(mf), 0)
+        mf <- mf[c(1, args)]
+        mf$drop.unused.levels <- TRUE
+        mf.r <- mf[[match("r", names(mf))]]
+        r <- eval(mf.r, data, enclos = sys.frame(sys.parent()))
+        mf.var.r <- mf[[match("var.r", names(mf))]]
+        var.r <- eval(mf.var.r, data, enclos = sys.frame(sys.parent()))
+        mf.n <- mf[[match("n", names(mf))]]
+        n <- eval(mf.n, data, enclos = sys.frame(sys.parent()))
+        mf.id <- mf[[match("id", names(mf))]]
+        id <- eval(mf.id, data, enclos = sys.frame(sys.parent()))
+    }
+    if (is.null(var.r)) {
+        r <- r
+        var.r <- (1 - r^2)^2/(n - 1)
+        d <- (2 * r)/(sqrt(1 - r^2))
+        var.d <- 4 * var.r/(1 - r^2)^3
+        df <- n - 2
+        j <- 1 - (3/(4 * df - 1))
+        g <- j * d
+        var.g <- j^2 * var.d
+        lor <- pi * d/sqrt(3)
+        var.lor <- pi^2 * var.d/3
+        z <- 0.5 * log((1 + r)/(1 - r))
+        var.z <- 1/(n - 3)
+    }
+    r <- r
+    var.r <- var.r
+    d <- 2 * r/sqrt(1 - r^2)
+    var.d <- 4 * var.r/(1 - r^2)^3
+    df <- n - 2
+    j <- 1 - (3/(4 * df - 1))
+    g <- j * d
+    var.g <- j^2 * var.d
+    lor <- pi * d/sqrt(3)
+    var.lor <- pi^2 * var.d/3
+    z <- 0.5 * log((1 + r)/(1 - r))
+    var.z <- 1/(n - 3)
+    df <- n - 1
+    alpha <- (100 - level)/100
+    crit <- qt(alpha/2, df, lower.tail = FALSE)
+    zval.d <- d/sqrt(var.d)
+    pval.d <- 2 * pt(abs(zval.d), df, lower.tail = FALSE)
+    lower.d <- d - crit * sqrt(var.d)
+    upper.d <- d + crit * sqrt(var.d)
+    U3.d <- pnorm(d) * 100
+    cl.d <- (pnorm((d)/sqrt(2))) * 100
+    cliffs.d <- 2 * pnorm(d/sqrt(2)) - 1
+    zval.z <- z/sqrt(var.z)
+    pval.z <- 2 * pt(abs(zval.z), df, lower.tail = FALSE)
+    lower.z <- z - crit * sqrt(var.z)
+    upper.z <- z + crit * sqrt(var.z)
+    pval.r <- pval.z
+    lower.r <- ztor(lower.z)
+    upper.r <- ztor(upper.z)
+    zval.lor <- lor/sqrt(var.lor)
+    pval.lor <- 2 * pt(abs(zval.lor), df, lower.tail = FALSE)
+    lower.lor <- lor - crit * sqrt(var.lor)
+    upper.lor <- lor + crit * sqrt(var.lor)
+    nnt <- 1/(pnorm(d - qnorm(1 - cer)) - cer)
+    if (!is.null(data)) {
+        out <- round(data.frame(id = id, N.total = n, d = d, 
+            var.d = var.d, l.d = lower.d, u.d = upper.d, U3.d = U3.d, 
+            cl.d = cl.d, cliffs.d = cliffs.d, pval.d = pval.d, 
+            g = g, var.g = var.g, r = r, var.r = var.r, l.r = lower.r, 
+            u.r = upper.r,
+            pval.r = pval.r, fisher.z = z, var.z = var.z, l.z = lower.z, 
+            u.z = upper.z, OR = exp(lor), l.or = exp(lower.lor), 
+            u.or = exp(upper.lor), pval.or = pval.lor, lOR = lor, 
+            l.lor = lower.lor, u.lor = upper.lor, pval.lor = pval.lor, 
+            NNT = nnt), dig)
+        return(out)
+    }
+    else {
+        out <- round(data.frame(N.total = n, d = d, var.d = var.d, 
+            l.d = lower.d, u.d = upper.d, U3.d = U3.d, cl.d = cl.d, 
+            cliffs.d = cliffs.d, pval.d = pval.d, g = g, var.g = var.g,
+            r = r, var.r = var.r, 
+            l.r = lower.r, u.r = upper.r, pval.r = pval.r, fisher.z = z, 
+            var.z = var.z, l.z = lower.z, u.z = upper.z, OR = exp(lor), 
+            l.or = exp(lower.lor), u.or = exp(upper.lor), pval.or = pval.lor, 
+            lOR = lor, l.lor = lower.lor, u.lor = upper.lor, 
+            pval.lor = pval.lor, NNT = nnt), dig)
+        invisible(out)
+    }
+}
+
